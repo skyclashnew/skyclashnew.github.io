@@ -1,92 +1,81 @@
-// Skyclash: Tap to Triumph - Phaser 3 Basic Prototype
+const player = document.getElementById("player");
+const gameContainer = document.getElementById("gameContainer");
+const hpDisplay = document.getElementById("hp");
 
-import Phaser from 'phaser';
-
-const config = {
-    type: Phaser.AUTO,
-    width: 480,
-    height: 800,
-    physics: {
-        default: 'arcade',
-        arcade: {
-            gravity: { y: 1000 },
-            debug: false
-        }
-    },
-    scene: {
-        preload,
-        create,
-        update
-    }
-};
-
-let player;
-let cursors;
-let enemies;
-let score = 0;
-let scoreText;
-
-new Phaser.Game(config);
-
-function preload() {
-    this.load.image('player', 'assets/player.png');
-    this.load.image('enemy', 'assets/enemy.png');
-    this.load.image('ground', 'assets/ground.png');
-}
-
-function create() {
-    this.add.image(240, 400, 'ground').setScale(2);
-
-    player = this.physics.add.sprite(240, 600, 'player').setScale(1.5);
-    player.setCollideWorldBounds(true);
-    player.setBounce(0.2);
-
-    enemies = this.physics.add.group();
-
-    this.time.addEvent({
-        delay: 2000,
-        callback: spawnEnemy,
-        callbackScope: this,
-        loop: true
-    });
-
-    scoreText = this.add.text(10, 10, 'Score: 0', {
-        fontSize: '24px',
-        fill: '#fff'
-    });
-
-    this.input.on('pointerdown', () => {
-        if (player.body.touching.down) {
-            player.setVelocityY(-550);
-        }
-    });
-
-    this.physics.add.overlap(player, enemies, hitEnemy, null, this);
-}
-
-function update() {
-    // Player updates handled by input only
-    enemies.children.iterate(enemy => {
-        if (enemy.y > 800) enemy.destroy();
-    });
-}
+let hp = 100;
 
 function spawnEnemy() {
-    const x = Phaser.Math.Between(50, 430);
-    const enemy = enemies.create(x, 0, 'enemy');
-    enemy.setVelocityY(100);
-    enemy.setCollideWorldBounds(true);
-    enemy.setBounce(1);
+  const enemy = document.createElement("div");
+  enemy.classList.add("enemy");
+  const x = Math.random() * (window.innerWidth - 30);
+  enemy.style.left = `${x}px`;
+  gameContainer.appendChild(enemy);
+
+  const interval = setInterval(() => {
+    const enemyRect = enemy.getBoundingClientRect();
+    const playerRect = player.getBoundingClientRect();
+
+    if (enemyRect.top < playerRect.top) {
+      enemy.style.top = `${enemy.offsetTop + 2}px`;
+    } else {
+      clearInterval(interval);
+      gameContainer.removeChild(enemy);
+      hp -= 10;
+      hpDisplay.textContent = hp;
+      if (hp <= 0) {
+        alert("Game Over!");
+        location.reload();
+      }
+    }
+  }, 30);
 }
 
-function hitEnemy(player, enemy) {
-    if (player.body.velocity.y > 0 && player.y < enemy.y) {
-        enemy.destroy();
-        score += 10;
-        scoreText.setText('Score: ' + score);
-        player.setVelocityY(-400); // bounce back
-    } else {
-        this.scene.restart();
-        score = 0;
+function juml() {
+  const projectile = document.createElement("div");
+  projectile.classList.add("projectile");
+  projectile.style.left = `${player.offsetLeft + 15}px`;
+  projectile.style.top = `${player.offsetTop}px`;
+  gameContainer.appendChild(projectile);
+
+  const interval = setInterval(() => {
+    projectile.style.top = `${projectile.offsetTop - 5}px`;
+
+    const enemies = document.querySelectorAll(".enemy");
+    enemies.forEach(enemy => {
+      const eRect = enemy.getBoundingClientRect();
+      const pRect = projectile.getBoundingClientRect();
+      if (
+        pRect.left < eRect.right &&
+        pRect.right > eRect.left &&
+        pRect.top < eRect.bottom &&
+        pRect.bottom > eRect.top
+      ) {
+        gameContainer.removeChild(enemy);
+        gameContainer.removeChild(projectile);
+        clearInterval(interval);
+      }
+    });
+
+    if (projectile.offsetTop < 0) {
+      gameContainer.removeChild(projectile);
+      clearInterval(interval);
     }
+  }, 20);
 }
+
+function hit() {
+  const playerRect = player.getBoundingClientRect();
+  const enemies = document.querySelectorAll(".enemy");
+  enemies.forEach(enemy => {
+    const eRect = enemy.getBoundingClientRect();
+    if (
+      Math.abs(eRect.top - playerRect.top) < 40 &&
+      Math.abs(eRect.left - playerRect.left) < 50
+    ) {
+      gameContainer.removeChild(enemy);
+    }
+  });
+}
+
+// Spawn enemies every 2 seconds
+setInterval(spawnEnemy, 2000);
