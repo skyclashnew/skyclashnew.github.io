@@ -3,6 +3,21 @@ const gameContainer = document.getElementById("gameContainer");
 const hpDisplay = document.getElementById("hp");
 
 let hp = 100;
+let playerX = window.innerWidth / 2;
+
+function updatePlayerPosition() {
+  player.style.left = `${playerX}px`;
+}
+
+document.addEventListener("keydown", (e) => {
+  const step = 15;
+  if (e.key === "ArrowLeft") {
+    playerX = Math.max(0, playerX - step);
+  } else if (e.key === "ArrowRight") {
+    playerX = Math.min(window.innerWidth - player.offsetWidth, playerX + step);
+  }
+  updatePlayerPosition();
+});
 
 function spawnEnemy() {
   const enemy = document.createElement("div");
@@ -79,3 +94,6 @@ function hit() {
 
 // Spawn enemies every 2 seconds
 setInterval(spawnEnemy, 2000);
+
+// Initialize player position
+updatePlayerPosition();
